@@ -310,8 +310,16 @@ function sortCitiesArray(arr) {
  *    "Poland" => ["Lodz"]
  *   }
  */
-function group(/* array, keySelector, valueSelector */) {
-  throw new Error('Not implemented');
+function group(array, keySelector, valueSelector) {
+  const arrayMap = array.map((element) => {
+    const pair = [keySelector(element)];
+    const allValues = array
+      .filter((item) => keySelector(element) === keySelector(item))
+      .map((value) => valueSelector(value));
+    pair.push(allValues);
+    return pair;
+  });
+  return new Map(arrayMap);
 }
 
 /**
@@ -369,32 +377,120 @@ function group(/* array, keySelector, valueSelector */) {
  */
 
 const cssSelectorBuilder = {
-  element(/* value */) {
-    throw new Error('Not implemented');
+  selectors: [],
+  order: ['element', 'id', 'class', 'attr', 'pseudoclass', 'pseudoelement'],
+
+  element(value) {
+    if (this.selectors.filter((e) => e.type === 'element').length >= 1)
+      throw new Error(
+        'Element, id and pseudo-element should not occur more then one time inside the selector'
+      );
+    if (this.selectors.length) {
+      const lastElements = this.selectors.map((selector) => selector.type);
+      if (this.order.slice(1).some((e) => lastElements.includes(e)))
+        throw new Error(
+          'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
+        );
+    }
+    const copyThis = {};
+    Object.assign(copyThis, this);
+    copyThis.selectors.push({ selector: value, type: 'element' });
+    this.selectors = [];
+    return copyThis;
   },
 
-  id(/* value */) {
-    throw new Error('Not implemented');
+  id(value) {
+    const copyThis = {};
+    if (this.selectors.filter((e) => e.type === 'id').length >= 1)
+      throw new Error(
+        'Element, id and pseudo-element should not occur more then one time inside the selector'
+      );
+    if (this.selectors.length) {
+      const lastElements = this.selectors.map((selector) => selector.type);
+      if (this.order.slice(2).some((e) => lastElements.includes(e)))
+        throw new Error(
+          'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
+        );
+    }
+    Object.assign(copyThis, this);
+    copyThis.selectors.push({ selector: `#${value}`, type: 'id' });
+    this.selectors = [];
+    return copyThis;
   },
 
-  class(/* value */) {
-    throw new Error('Not implemented');
+  class(value) {
+    if (this.selectors.length) {
+      const lastElements = this.selectors.map((selector) => selector.type);
+      if (this.order.slice(3).some((e) => lastElements.includes(e)))
+        throw new Error(
+          'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
+        );
+    }
+    const copyThis = {};
+    Object.assign(copyThis, this);
+    copyThis.selectors.push({ selector: `.${value}`, type: 'class' });
+    this.selectors = [];
+    return copyThis;
   },
 
-  attr(/* value */) {
-    throw new Error('Not implemented');
+  attr(value) {
+    if (this.selectors.length) {
+      const lastElements = this.selectors.map((selector) => selector.type);
+      if (this.order.slice(4).some((e) => lastElements.includes(e)))
+        throw new Error(
+          'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
+        );
+    }
+    const copyThis = {};
+    Object.assign(copyThis, this);
+    copyThis.selectors.push({ selector: `[${value}]`, type: 'attr' });
+    this.selectors = [];
+    return copyThis;
   },
 
-  pseudoClass(/* value */) {
-    throw new Error('Not implemented');
+  pseudoClass(value) {
+    if (this.selectors.length) {
+      const lastElements = this.selectors.map((selector) => selector.type);
+      if (this.order.slice(5).some((e) => lastElements.includes(e)))
+        throw new Error(
+          'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
+        );
+    }
+    const copyThis = {};
+    Object.assign(copyThis, this);
+    copyThis.selectors.push({ selector: `:${value}`, type: 'pseudoclass' });
+    this.selectors = [];
+    return copyThis;
   },
 
-  pseudoElement(/* value */) {
-    throw new Error('Not implemented');
+  pseudoElement(value) {
+    if (this.selectors.filter((e) => e.type === 'pseudoelement').length >= 1)
+      throw new Error(
+        'Element, id and pseudo-element should not occur more then one time inside the selector'
+      );
+    const copyThis = {};
+    Object.assign(copyThis, this);
+    copyThis.selectors.push({ selector: `::${value}`, type: 'pseudoelement' });
+    this.selectors = [];
+    return copyThis;
   },
 
-  combine(/* selector1, combinator, selector2 */) {
-    throw new Error('Not implemented');
+  combine(selector1, combinator, selector2) {
+    const copyThis = {};
+    Object.assign(copyThis, this);
+    copyThis.selectors.push(
+      ...selector1.selectors,
+      { selector: ` ${combinator} `, type: 'combinator' },
+      ...selector2.selectors
+    );
+    this.selectors = [];
+    return copyThis;
+  },
+
+  stringify() {
+    const result = this.selectors.map((item) => item.selector).join('');
+    this.selectors = [];
+    return result;
   },
 };
 
