@@ -313,10 +313,13 @@ function sortCitiesArray(arr) {
 function group(array, keySelector, valueSelector) {
   const arrayMap = array.map((element) => {
     const pair = [keySelector(element)];
-    const allValues = array
-      .filter((item) => keySelector(element) === keySelector(item))
-      .map((value) => valueSelector(value));
-    pair.push(allValues);
+    const values = array.reduce((acc, item) => {
+      if (keySelector(element) === keySelector(item)) {
+        acc.push(valueSelector(item));
+      }
+      return acc;
+    }, []);
+    pair.push(values);
     return pair;
   });
   return new Map(arrayMap);
