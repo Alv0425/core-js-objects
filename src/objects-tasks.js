@@ -379,19 +379,25 @@ function group(array, keySelector, valueSelector) {
 const cssSelectorBuilder = {
   selectors: [],
   order: ['element', 'id', 'class', 'attr', 'pseudoclass', 'pseudoelement'],
-
-  element(value) {
-    if (this.selectors.filter((e) => e.type === 'element').length >= 1)
-      throw new Error(
-        'Element, id and pseudo-element should not occur more then one time inside the selector'
-      );
+  checkOrder(n) {
     if (this.selectors.length) {
       const lastElements = this.selectors.map((selector) => selector.type);
-      if (this.order.slice(1).some((e) => lastElements.includes(e)))
+      if (this.order.slice(n).some((e) => lastElements.includes(e)))
         throw new Error(
           'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
         );
     }
+  },
+  checkType(type) {
+    if (this.selectors.filter((e) => e.type === type).length >= 1)
+      throw new Error(
+        'Element, id and pseudo-element should not occur more then one time inside the selector'
+      );
+  },
+
+  element(value) {
+    this.checkType('element');
+    this.checkOrder(1);
     const copyThis = {};
     Object.assign(copyThis, this);
     copyThis.selectors.push({ selector: value, type: 'element' });
@@ -401,17 +407,8 @@ const cssSelectorBuilder = {
 
   id(value) {
     const copyThis = {};
-    if (this.selectors.filter((e) => e.type === 'id').length >= 1)
-      throw new Error(
-        'Element, id and pseudo-element should not occur more then one time inside the selector'
-      );
-    if (this.selectors.length) {
-      const lastElements = this.selectors.map((selector) => selector.type);
-      if (this.order.slice(2).some((e) => lastElements.includes(e)))
-        throw new Error(
-          'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
-        );
-    }
+    this.checkType('id');
+    this.checkOrder(2);
     Object.assign(copyThis, this);
     copyThis.selectors.push({ selector: `#${value}`, type: 'id' });
     this.selectors = [];
@@ -419,13 +416,7 @@ const cssSelectorBuilder = {
   },
 
   class(value) {
-    if (this.selectors.length) {
-      const lastElements = this.selectors.map((selector) => selector.type);
-      if (this.order.slice(3).some((e) => lastElements.includes(e)))
-        throw new Error(
-          'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
-        );
-    }
+    this.checkOrder(3);
     const copyThis = {};
     Object.assign(copyThis, this);
     copyThis.selectors.push({ selector: `.${value}`, type: 'class' });
@@ -434,13 +425,7 @@ const cssSelectorBuilder = {
   },
 
   attr(value) {
-    if (this.selectors.length) {
-      const lastElements = this.selectors.map((selector) => selector.type);
-      if (this.order.slice(4).some((e) => lastElements.includes(e)))
-        throw new Error(
-          'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
-        );
-    }
+    this.checkOrder(4);
     const copyThis = {};
     Object.assign(copyThis, this);
     copyThis.selectors.push({ selector: `[${value}]`, type: 'attr' });
@@ -449,13 +434,7 @@ const cssSelectorBuilder = {
   },
 
   pseudoClass(value) {
-    if (this.selectors.length) {
-      const lastElements = this.selectors.map((selector) => selector.type);
-      if (this.order.slice(5).some((e) => lastElements.includes(e)))
-        throw new Error(
-          'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
-        );
-    }
+    this.checkOrder(5);
     const copyThis = {};
     Object.assign(copyThis, this);
     copyThis.selectors.push({ selector: `:${value}`, type: 'pseudoclass' });
@@ -464,10 +443,7 @@ const cssSelectorBuilder = {
   },
 
   pseudoElement(value) {
-    if (this.selectors.filter((e) => e.type === 'pseudoelement').length >= 1)
-      throw new Error(
-        'Element, id and pseudo-element should not occur more then one time inside the selector'
-      );
+    this.checkType('pseudoelement');
     const copyThis = {};
     Object.assign(copyThis, this);
     copyThis.selectors.push({ selector: `::${value}`, type: 'pseudoelement' });
